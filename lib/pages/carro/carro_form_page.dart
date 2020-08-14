@@ -1,9 +1,14 @@
+import 'dart:io';
+
 import 'package:app_frequencia/pages/api_response.dart';
 import 'package:app_frequencia/pages/carro/carro.dart';
 import 'package:app_frequencia/pages/carro/carro_api.dart';
 import 'package:app_frequencia/utils/alert.dart';
+import 'package:app_frequencia/utils/event_bus.dart';
+import 'package:app_frequencia/utils/nav.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 
 class CarroFormPage extends StatefulWidget {
   final Carro carro;
@@ -24,6 +29,8 @@ class _CarroFormPageState extends State<CarroFormPage> {
   int _radioIndex = 0;
 
   var _showProgress = false;
+
+  File _file;
 
   Carro get carro => widget.carro;
 
@@ -134,14 +141,23 @@ class _CarroFormPageState extends State<CarroFormPage> {
   }
 
   _headerFoto() {
-    return carro != null
-        ? Image.network(
-            carro.urlFoto,
-          )
-        : Image.asset(
-            "assets/images/camera.png",
-            height: 150,
-          );
+    return InkWell(
+      onTap: _onClickFoto,
+      child: _file != null
+          ? Image.file(
+              _file,
+              height: 150,
+            )
+          : carro != null
+              ? Image.network(
+                  carro.urlFoto ??
+                      "https://s3-sa-east-1.amazonaws.com/videos.livetouchdev.com.br/classicos/Tucker.png",
+                )
+              : Image.asset(
+                  "assets/images/camera.png",
+                  height: 150,
+                ),
+    );
   }
 
   _radioTipo() {
@@ -226,9 +242,12 @@ class _CarroFormPageState extends State<CarroFormPage> {
 
     print("Salvar o carro $car");
 
-    ApiResponse<bool> response = await CarrosApi.save(car);
+    ApiResponse<bool> response = await CarrosApi.save(car, _file);
     if (response.ok) {
-      alert(context, "Carro salvo com sucesso");
+      alert(context, "Carro salvo com sucesso", callback: () {
+        EventBus.get(context).sendEvent("carro salvo");
+        pop(context);
+      });
     } else {
       alert(context, response.msg);
     }
@@ -238,5 +257,14 @@ class _CarroFormPageState extends State<CarroFormPage> {
     });
 
     print("Fim.");
+  }
+
+  _onClickFoto() async {
+    File file = await ImagePicker.pickImage(source: ImageSource.gallery);
+    if (file != null) {
+      setState(() {
+        this._file = file;
+      });
+    }
   }
 }

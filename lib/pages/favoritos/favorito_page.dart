@@ -1,3 +1,4 @@
+import 'package:app_frequencia/main.dart';
 import 'package:app_frequencia/pages/carro/carro.dart';
 import 'package:app_frequencia/pages/carro/carro_page.dart';
 import 'package:app_frequencia/pages/carro/carro_api.dart';
@@ -6,6 +7,7 @@ import 'package:app_frequencia/pages/favoritos/favorito_bloc.dart';
 import 'package:app_frequencia/utils/nav.dart';
 import 'package:app_frequencia/widgets/text_error.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 class FavoritoPage extends StatefulWidget {
   @override
@@ -14,7 +16,6 @@ class FavoritoPage extends StatefulWidget {
 
 class _FavoritoPageState extends State<FavoritoPage>
     with AutomaticKeepAliveClientMixin<FavoritoPage> {
-  final _bloc = FavoritoBloc();
 
   @override
   bool get wantKeepAlive => true;
@@ -23,15 +24,18 @@ class _FavoritoPageState extends State<FavoritoPage>
   void initState() {
     super.initState();
 
-    _bloc.loadData();
+    FavoritoBloc favoritoBloc = Provider.of<FavoritoBloc>(context, listen: false);
+    favoritoBloc.loadData();
   }
 
   @override
   Widget build(BuildContext context) {
     super.build(context);
 
+    FavoritoBloc favoritoBloc = Provider.of<FavoritoBloc>(context);
+
     return StreamBuilder(
-      stream: _bloc.stream,
+      stream: favoritoBloc.stream,
       builder: (context, snapshot) {
         if (snapshot.hasError) {
           return TextError("Não foi possível buscar os carros.");
@@ -47,7 +51,7 @@ class _FavoritoPageState extends State<FavoritoPage>
 
         return RefreshIndicator(
           onRefresh: _onRefresh,
-            child: _listView(carros),
+          child: _listView(carros),
         );
       },
     );
@@ -113,14 +117,7 @@ class _FavoritoPageState extends State<FavoritoPage>
     push(context, CarroPage(car));
   }
 
-  @override
-  void dispose() {
-    super.dispose();
-
-    _bloc.dispose();
-  }
-
   Future<void> _onRefresh() {
-    return _bloc.loadData();
+    return Provider.of<FavoritoBloc>(context, listen: false).loadData();
   }
 }

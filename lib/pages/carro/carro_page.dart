@@ -1,9 +1,16 @@
+import 'dart:async';
+
+import 'package:app_frequencia/pages/api_response.dart';
 import 'package:app_frequencia/pages/carro/carro.dart';
+import 'package:app_frequencia/pages/carro/carro_api.dart';
 import 'package:app_frequencia/pages/carro/carro_form_page.dart';
 import 'package:app_frequencia/pages/favoritos/favorito_service.dart';
+import 'package:app_frequencia/utils/alert.dart';
+import 'package:app_frequencia/utils/event_bus.dart';
 import 'package:app_frequencia/utils/nav.dart';
 import 'package:app_frequencia/widgets/text.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 class CarroPage extends StatefulWidget {
   Carro carro;
@@ -72,7 +79,8 @@ class _CarroPageState extends State<CarroPage> {
       padding: EdgeInsets.all(16),
       child: ListView(
         children: <Widget>[
-          Image.network(widget.carro.urlFoto),
+          Image.network(widget.carro.urlFoto ??
+              "https://s3-sa-east-1.amazonaws.com/videos.livetouchdev.com.br/classicos/Tucker.png"),
           _bloco1(),
           Divider(),
           _bloco2(),
@@ -124,7 +132,7 @@ class _CarroPageState extends State<CarroPage> {
         push(context, CarroFormPage(carro: widget.carro));
         break;
       case "Deletar":
-        print("Deletar!");
+        deletar();
         break;
       case "Share":
         print("Share!");
@@ -133,7 +141,7 @@ class _CarroPageState extends State<CarroPage> {
   }
 
   _onClickFavorito() async {
-    bool favorito = await FavoritoService.favoritar(widget.carro);
+    bool favorito = await FavoritoService.favoritar(context, widget.carro);
 
     setState(() {
       color = favorito ? Colors.red : Colors.grey;
@@ -155,5 +163,17 @@ class _CarroPageState extends State<CarroPage> {
             "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.")
       ],
     );
+  }
+
+  void deletar() async {
+    ApiResponse<bool> response = await CarrosApi.delete(widget.carro);
+    if (response.ok) {
+      alert(context, "Carro deletado com sucesso", callback: () {
+        EventBus.get(context).sendEvent("carro deletado");
+        pop(context);
+      });
+    } else {
+      alert(context, response.msg);
+    }
   }
 }

@@ -1,10 +1,14 @@
+import 'dart:async';
+
 import 'package:app_frequencia/pages/carro/carro.dart';
 import 'package:app_frequencia/pages/carro/carro_page.dart';
 import 'package:app_frequencia/pages/carro/carro_api.dart';
 import 'package:app_frequencia/pages/carro/carro_bloc.dart';
+import 'package:app_frequencia/utils/event_bus.dart';
 import 'package:app_frequencia/utils/nav.dart';
 import 'package:app_frequencia/widgets/text_error.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 class CarrosListView extends StatefulWidget {
   String tipoCarro;
@@ -19,6 +23,8 @@ class _CarrosListViewState extends State<CarrosListView>
     with AutomaticKeepAliveClientMixin<CarrosListView> {
   List<Carro> carros;
 
+  StreamSubscription<String> subscription;
+
   String get tipo => widget.tipoCarro;
 
   final _bloc = CarrosBloc();
@@ -31,6 +37,13 @@ class _CarrosListViewState extends State<CarrosListView>
     super.initState();
 
     _bloc.loadData(tipo);
+
+    final bus = EventBus.get(context);
+    subscription = bus.stream.listen((String event) {
+      print("Event $event");
+      _bloc.loadData(tipo);
+
+    });
   }
 
   @override
@@ -101,9 +114,7 @@ class _CarrosListViewState extends State<CarrosListView>
                           ),
                           FlatButton(
                             child: const Text('Compartilhar'),
-                            onPressed: () {
-                              /* ... */
-                            },
+                            onPressed: () => _onclickShare(car),
                           ),
                         ],
                       ),
@@ -125,9 +136,14 @@ class _CarrosListViewState extends State<CarrosListView>
     super.dispose();
 
     _bloc.dispose();
+    subscription.cancel();
   }
 
   Future<void> _onRefresh() {
     return _bloc.loadData(tipo);
+  }
+
+  _onclickShare(Carro car) {
+    print("Teste");
   }
 }
